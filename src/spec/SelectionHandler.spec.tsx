@@ -1,11 +1,12 @@
 import React from 'react'
 import { SelectionHandler } from '../SelectionHandler'
 import { shallow } from 'enzyme'
+import { utils } from '../utils'
 
 interface DomRectListMock {
-  y: number,
-  x: number,
-  width: number,
+  y: number
+  x: number
+  width: number
   height: number
 }
 
@@ -18,7 +19,11 @@ describe('SelectionHandler', () => {
     mockGetSelection('None', '', [])
     mockSelectionRegionRectangles([{ x: 0, y: 0, height: 10, width: 10 }])
 
-    const selectionHandlerWrapper = shallow(<SelectionHandler><h1>Title</h1></SelectionHandler>)
+    const selectionHandlerWrapper = shallow(
+      <SelectionHandler>
+        <h1>Title</h1>
+      </SelectionHandler>
+    )
     expect(selectionHandlerWrapper.text()).toEqual('Title')
   })
 
@@ -39,7 +44,12 @@ describe('SelectionHandler', () => {
     const callback = jest.fn()
     const deselectCallback = jest.fn()
 
-    const selectionHandlerWrapper = shallow(<SelectionHandler onTextSelection={callback} onTextDeselection={deselectCallback} />)
+    const selectionHandlerWrapper = shallow(
+      <SelectionHandler
+        onTextSelection={callback}
+        onTextDeselection={deselectCallback}
+      />
+    )
     selectionHandlerWrapper.simulate('mouseup')
     expect(callback).not.toHaveBeenCalled()
     expect(deselectCallback).toHaveBeenCalled()
@@ -51,68 +61,69 @@ describe('SelectionHandler', () => {
 
     const callback = jest.fn()
 
-    const selectionHandlerWrapper = shallow(<SelectionHandler onTextSelection={callback} />)
+    const selectionHandlerWrapper = shallow(
+      <SelectionHandler onTextSelection={callback} />
+    )
     selectionHandlerWrapper.simulate('mouseup')
 
     expect(callback).toHaveBeenCalledWith({
       text: 'a text',
-      selectionRectangles: [{ top: 0, left: 0, width: 0, height: 0, regionId: '1' }]
-    })
-  })
-
-  it('should avoid selection of elements tags', () => {
-    mockGetSelection('Range', 'a text', [{ y: 0, x: 0, width: 10, height: 10 }, {x:1, y:1, height: 10, width: 10}])
-    mockSelectionRegionRectangles([{ x: 0, y: 0, height: 10, width: 10 }, {x:1, y:1, height: 10, width: 10}])
-
-    document.elementFromPoint = (x, y) => {
-      if (x === 0 && y === 0){
-        return document.createElement('div')
-      }
-
-      return document.createElement('span')
-    }
-
-    const callback = jest.fn()
-
-    const selectionHandlerWrapper = shallow(<SelectionHandler onTextSelection={callback} elementTagsToAvoid={['DIV']}/>)
-    selectionHandlerWrapper.simulate('mouseup')
-
-    expect(callback).toHaveBeenCalledWith({
-      text: 'a text',
-      selectionRectangles: [{ top: 1, left: 1, width: 10, height: 10, regionId: '1' }]
+      selectionRectangles: [
+        { top: 0, left: 0, width: 0, height: 0, regionId: '1' }
+      ]
     })
   })
 
   it('should return absolute position relative to SelectionRegion', () => {
-    mockGetSelection('Range', 'other text', [{ x: 10, y: 10, width: 1, height: 1 }])
-    mockSelectionRegionRectangles([{ x: 10, y: 10, height: 10, width: 10 }], ['other region'])
+    mockGetSelection('Range', 'other text', [
+      { x: 10, y: 10, width: 1, height: 1 }
+    ])
+    mockSelectionRegionRectangles(
+      [{ x: 10, y: 10, height: 10, width: 10 }],
+      ['other region']
+    )
     const callback = jest.fn()
 
-    const selectionHandlerWrapper = shallow(<SelectionHandler onTextSelection={callback} />)
+    const selectionHandlerWrapper = shallow(
+      <SelectionHandler onTextSelection={callback} />
+    )
 
     selectionHandlerWrapper.simulate('mouseup')
     expect(callback).toHaveBeenCalledWith({
       text: 'other text',
-      selectionRectangles: [{ top: 0, left: 0, width: 1, height: 1, regionId: 'other region' }]
+      selectionRectangles: [
+        { top: 0, left: 0, width: 1, height: 1, regionId: 'other region' }
+      ]
     })
   })
 
   it('should return absolute position relative to two SelectionRegions', () => {
-    mockGetSelection('Range', 'two rectangles selection', [{ x: 5, y: 5, width: 1, height: 2 }, {
-      x: 15,
-      y: 15,
-      width: 3,
-      height: 4
-    }])
-    mockSelectionRegionRectangles([{ x: 0, y: 0, height: 10, width: 10 },
-      { x: 10, y: 10, height: 10, width: 10 }], ['1', '2'])
+    mockGetSelection('Range', 'two rectangles selection', [
+      { x: 5, y: 5, width: 1, height: 2 },
+      {
+        x: 15,
+        y: 15,
+        width: 3,
+        height: 4
+      }
+    ])
+    mockSelectionRegionRectangles(
+      [
+        { x: 0, y: 0, height: 10, width: 10 },
+        { x: 10, y: 10, height: 10, width: 10 }
+      ],
+      ['1', '2']
+    )
     const callback = jest.fn()
 
-    const selectionHandlerWrapper = shallow(<SelectionHandler onTextSelection={callback} />)
+    const selectionHandlerWrapper = shallow(
+      <SelectionHandler onTextSelection={callback} />
+    )
 
     selectionHandlerWrapper.simulate('mouseup')
     expect(callback).toHaveBeenCalledWith({
-      text: 'two rectangles selection', selectionRectangles: [
+      text: 'two rectangles selection',
+      selectionRectangles: [
         {
           top: 5,
           left: 5,
@@ -126,29 +137,32 @@ describe('SelectionHandler', () => {
           width: 3,
           height: 4,
           regionId: '2'
-        }]
+        }
+      ]
     })
   })
 })
 
-const mockGetSelection = (type: string, text: string, domRectListMock: DomRectListMock[]) => {
-  const domRectList: DOMRectList = domRectListMock.reduce((obj: any, item: DomRectListMock, currentIndex: number) => {
-    obj[currentIndex] = item as DOMRect
-    return obj
-  }, {}) as unknown as DOMRectList
+const mockGetSelection = (
+  type: string,
+  text: string,
+  domRectListMock: DomRectListMock[]
+) => {
+  const domRectList: DOMRectList = (domRectListMock.reduce(
+    (obj: any, item: DomRectListMock, currentIndex: number) => {
+      obj[currentIndex] = item as DOMRect
+      return obj
+    },
+    {}
+  ) as unknown) as DOMRectList
 
+  spyOn(utils, 'getTextSelectionRects').and.returnValue(domRectListMock);
 
   window.getSelection = () => {
-
-    const mockRange = {
-      getClientRects: () => {
-        return domRectList
-      }
-    }
-
+    const mockRange = {}
     const mockSelection = {
       getRangeAt(index: number): Range {
-        return mockRange as Range
+        return mockRange as unknown as Range
       },
       type: type,
       toString(): string {
@@ -160,7 +174,10 @@ const mockGetSelection = (type: string, text: string, domRectListMock: DomRectLi
   }
 }
 
-function mockSelectionRegionRectangles(domRectListMock: DomRectListMock[], rectangleIds: string[] = ['1']) {
+function mockSelectionRegionRectangles(
+  domRectListMock: DomRectListMock[],
+  rectangleIds: string[] = ['1']
+) {
   const regionsDomRectList = domRectListMock.map(domRectListMock => {
     return domRectListMock as DOMRect
   })
@@ -185,7 +202,7 @@ function mockSelectionRegionRectangles(domRectListMock: DomRectListMock[], recta
 
 function mockElementFromPoint(divCoordinateX: number, divCoordinateY: number) {
   document.elementFromPoint = (x, y) => {
-    if (x === divCoordinateX && y === divCoordinateY){
+    if (x === divCoordinateX && y === divCoordinateY) {
       return document.createElement('div')
     }
 

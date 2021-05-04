@@ -1,19 +1,18 @@
 import React, { FunctionComponent } from 'react'
-import { SelectionRectangle, TextSelection } from './TextSelection'
-
+import { TextSelection } from './TextSelection'
+import { utils } from './utils'
 
 interface SelectionHandlerProps {
-  onTextSelection?: (textSelection: TextSelection) => any,
-  onTextDeselection?: () => any,
-  elementTagsToAvoid?: string[],
+  onTextSelection?: (textSelection: TextSelection) => any
+  onTextDeselection?: () => any
+  elementTagsToAvoid?: string[]
 }
 
 const SelectionHandler: FunctionComponent<SelectionHandlerProps> = ({
-                                                                      onTextSelection,
-                                                                      onTextDeselection,
-                                                                      elementTagsToAvoid,
-                                                                      children
-                                                                    }) => {
+  onTextSelection,
+  onTextDeselection,
+  children
+}) => {
   const ref = React.useRef(null)
   const getSelection = () => {
     if (!ref || !ref.current || !onTextSelection) {
@@ -21,7 +20,9 @@ const SelectionHandler: FunctionComponent<SelectionHandlerProps> = ({
     }
 
     // @ts-ignore
-    const regionsNodeList = ref.current.querySelectorAll('div[data-region-selector-id]')
+    const regionsNodeList = ref.current.querySelectorAll(
+      'div[data-region-selector-id]'
+    )
     const regionElements = Array.prototype.slice.call(regionsNodeList)
     let selection = null
     if (window) {
@@ -33,43 +34,44 @@ const SelectionHandler: FunctionComponent<SelectionHandlerProps> = ({
       return
     }
 
-    const selectionDomRectList = selection.getRangeAt(0).getClientRects()
+    const range = selection.getRangeAt(0)
 
-    let selectionDomRectListKeys = Object.keys(selectionDomRectList)
-
-    if (elementTagsToAvoid) {
-      selectionDomRectListKeys = selectionDomRectListKeys.filter(x  => {
-        const selectionDomRect = selectionDomRectList[parseInt(x)]
-        const element = document.elementFromPoint(selectionDomRect.x, selectionDomRect.y);
-        return elementTagsToAvoid.indexOf(element.tagName) === -1;
-      })
-    }
+    const selectionDomRectList = utils.getTextSelectionRects(range)
+    const selectionDomRectListKeys = Object.keys(selectionDomRectList)
 
     const selectionRectangles = selectionDomRectListKeys.map((key: string) => {
-        const selectionDomRect = selectionDomRectList[parseInt(key)]
-        const regionElement = regionElements.find((x: HTMLDivElement) => {
-          const regionDomRect = x.getBoundingClientRect()
-          const horizontalMatch = regionDomRect.x <= selectionDomRect.x && selectionDomRect.x <= regionDomRect.x + regionDomRect.width
-          const verticalMatch = regionDomRect.y <= selectionDomRect.y && selectionDomRect.y <= regionDomRect.y + regionDomRect.height
-          return horizontalMatch && verticalMatch
-        })
-        const regionDomRect = regionElement.getBoundingClientRect()
-        return {
-          top: selectionDomRect.y - regionDomRect.y,
-          left: selectionDomRect.x - regionDomRect.x,
-          width: selectionDomRect.width,
-          height: selectionDomRect.height,
-          regionId: regionElement.getAttribute('data-region-selector-id')
-        }
+      const selectionDomRect = selectionDomRectList[parseInt(key)]
+      const regionElement = regionElements.find((x: HTMLDivElement) => {
+        const regionDomRect = x.getBoundingClientRect()
+        const horizontalMatch =
+          regionDomRect.x <= selectionDomRect.x &&
+          selectionDomRect.x <= regionDomRect.x + regionDomRect.width
+        const verticalMatch =
+          regionDomRect.y <= selectionDomRect.y &&
+          selectionDomRect.y <= regionDomRect.y + regionDomRect.height
+        return horizontalMatch && verticalMatch
+      })
+      const regionDomRect = regionElement.getBoundingClientRect()
+      return {
+        top: selectionDomRect.y - regionDomRect.y,
+        left: selectionDomRect.x - regionDomRect.x,
+        width: selectionDomRect.width,
+        height: selectionDomRect.height,
+        regionId: regionElement.getAttribute('data-region-selector-id')
       }
-    )
+    })
 
-    onTextSelection({ text: selection.toString(), selectionRectangles: selectionRectangles })
-
+    onTextSelection({
+      text: selection.toString(),
+      selectionRectangles: selectionRectangles
+    })
   }
 
-  return (<div ref={ref} onMouseUp={getSelection}>{children}</div>)
+  return (
+    <div ref={ref} onMouseUp={getSelection}>
+      {children}
+    </div>
+  )
 }
-
 
 export { SelectionHandler }

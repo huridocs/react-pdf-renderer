@@ -5,8 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SelectionHandler = void 0;
 var react_1 = __importDefault(require("react"));
+var utils_1 = require("./utils");
 var SelectionHandler = function (_a) {
-    var onTextSelection = _a.onTextSelection, onTextDeselection = _a.onTextDeselection, elementTagsToAvoid = _a.elementTagsToAvoid, children = _a.children;
+    var onTextSelection = _a.onTextSelection, onTextDeselection = _a.onTextDeselection, children = _a.children;
     var ref = react_1.default.useRef(null);
     var getSelection = function () {
         if (!ref || !ref.current || !onTextSelection) {
@@ -24,21 +25,17 @@ var SelectionHandler = function (_a) {
                 onTextDeselection();
             return;
         }
-        var selectionDomRectList = selection.getRangeAt(0).getClientRects();
+        var range = selection.getRangeAt(0);
+        var selectionDomRectList = utils_1.utils.getTextSelectionRects(range);
         var selectionDomRectListKeys = Object.keys(selectionDomRectList);
-        if (elementTagsToAvoid) {
-            selectionDomRectListKeys = selectionDomRectListKeys.filter(function (x) {
-                var selectionDomRect = selectionDomRectList[parseInt(x)];
-                var element = document.elementFromPoint(selectionDomRect.x, selectionDomRect.y);
-                return elementTagsToAvoid.indexOf(element.tagName) === -1;
-            });
-        }
         var selectionRectangles = selectionDomRectListKeys.map(function (key) {
             var selectionDomRect = selectionDomRectList[parseInt(key)];
             var regionElement = regionElements.find(function (x) {
                 var regionDomRect = x.getBoundingClientRect();
-                var horizontalMatch = regionDomRect.x <= selectionDomRect.x && selectionDomRect.x <= regionDomRect.x + regionDomRect.width;
-                var verticalMatch = regionDomRect.y <= selectionDomRect.y && selectionDomRect.y <= regionDomRect.y + regionDomRect.height;
+                var horizontalMatch = regionDomRect.x <= selectionDomRect.x &&
+                    selectionDomRect.x <= regionDomRect.x + regionDomRect.width;
+                var verticalMatch = regionDomRect.y <= selectionDomRect.y &&
+                    selectionDomRect.y <= regionDomRect.y + regionDomRect.height;
                 return horizontalMatch && verticalMatch;
             });
             var regionDomRect = regionElement.getBoundingClientRect();
@@ -50,7 +47,10 @@ var SelectionHandler = function (_a) {
                 regionId: regionElement.getAttribute('data-region-selector-id')
             };
         });
-        onTextSelection({ text: selection.toString(), selectionRectangles: selectionRectangles });
+        onTextSelection({
+            text: selection.toString(),
+            selectionRectangles: selectionRectangles
+        });
     };
     return (react_1.default.createElement("div", { ref: ref, onMouseUp: getSelection }, children));
 };
